@@ -20,6 +20,8 @@ export default function CameraComponent() {
     const [isExporting, setIsExporting] = useState(false);
     const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedCamera, setSelectedCamera] = useState<string | undefined>();
+    const streamRef = useRef<MediaStream | null>(null);
+
 
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -35,24 +37,32 @@ export default function CameraComponent() {
     const [frames, setFrames] = useState<string[]>([]);
     let stream: MediaStream;
 
-    async function startCamera(deviceId?: string) {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-                deviceId: deviceId ? { exact: deviceId } : undefined,
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-            },
-          audio: false,
-        });
+    const startCamera = async (deviceId?: string) => {
+        try {
+            // stop ancien stream
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+            }
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+            // nouvelle config
+            const constraints: MediaStreamConstraints = {
+                video: deviceId
+                    ? { deviceId: { exact: deviceId } }
+                    : { facingMode: "environment" }, // arrière par défaut si pas précisé
+                audio: false
+            };
+
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                await videoRef.current.play();
+            }
+            streamRef.current = stream;
+        } catch (err) {
+            console.error("Erreur startCamera:", err);
         }
-      } catch (err) {
-        console.error("Erreur accès caméra :", err);
-      }
-    }
+    };
+
 
     // const startCamera = async (deviceId?: string) => {
 
@@ -77,18 +87,7 @@ export default function CameraComponent() {
 
         startCamera(selectedCamera);
 
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
-        };
     }, []);
-
-    useEffect(() => {
-        if (selectedCamera) {
-            startCamera(selectedCamera);
-        }   
-    }, [selectedCamera]);
 
 
     useEffect(() => {
@@ -205,7 +204,11 @@ export default function CameraComponent() {
 
                 {/* PREVIEW */}
                 <div className="flex justify-center">
-                    <div className="relative w-90 sm:w-105 aspect-video rounded-2xl overflow-hidden bg-black border border-white/10 shadow-lg">
+                    <div className="relative w-[90vw] max-w-md rounded-2xl overflow-hidden bg-black border border-white/10 shadow-lg" style={{
+                        aspectRatio: videoRef.current
+                            ? `${videoRef.current.videoWidth} / ${videoRef.current.videoHeight}`
+                            : "1 / 1",
+                    }}>
                         {!isPlaying ? (
                             <>
                                 <video
@@ -219,7 +222,7 @@ export default function CameraComponent() {
                                     <img
                                         src={frames[frames.length - 1]}
                                         alt="Onion skin"
-                                        className="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none"
+                                        className="absolute inset-0 w-full h-full object-cover opacity-35 pointer-events-none"
                                     />
                                 )}
                             </>
@@ -253,41 +256,39 @@ export default function CameraComponent() {
                         Frame ({frames.length})
                     </button>
 
-                    {frames.length > 1 && (
-                        <>
-                            <button
-                                onClick={() => setIsPlaying(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                    <div className={`${frames.length < 5 ? "opacity-0" : "opacity-100"} flex items-center gap-3 transition-opacity`}>
+                        <button
+                            onClick={() => setIsPlaying(true)}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl
                    bg-white/10 text-white
                    hover:bg-white/20 transition"
-                            >
-                                <Play size={18} />
-                                Play
-                            </button>
+                        >
+                            <Play size={18} />
+                            Play
+                        </button>
 
-                            <button
-                                onClick={() => { setIsPlaying(false); startCamera(); }}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                        <button
+                            onClick={() => { setIsPlaying(false); startCamera(); }}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl
                    bg-white/10 text-white
                    hover:bg-white/20 transition"
-                            >
-                                <Square size={18} />
-                                Stop
-                            </button>
+                        >
+                            <Square size={18} />
+                            Stop
+                        </button>
 
-                            <button
-                                onClick={exportVideo}
-                                disabled={isExporting}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                        <button
+                            onClick={exportVideo}
+                            disabled={isExporting}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl
                    bg-white text-black font-semibold
                    hover:bg-gray-200 transition
                    disabled:opacity-50"
-                            >
-                                <Download size={18} />
-                                {isExporting ? "Export..." : "Exporter"}
-                            </button>
-                        </>
-                    )}
+                        >
+                            <Download size={18} />
+                            {isExporting ? "Export..." : "Exporter"}
+                        </button>
+                    </div>
                 </div>
 
 
@@ -326,7 +327,7 @@ export default function CameraComponent() {
                                     />
                                     <button
                                         onClick={() => removeFrame(index)}
-                                        className="absolute -top-2 -right-2 bg-black/80 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                        className="absolute -top-1 -right-1 bg-black/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition"
                                     >
                                         <X size={14} />
                                     </button>
