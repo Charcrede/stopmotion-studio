@@ -84,6 +84,12 @@ export default function CameraComponent() {
         };
     }, []);
 
+    useEffect(() => {
+        if (selectedCamera) {
+            startCamera(selectedCamera);
+        }   
+    }, [selectedCamera]);
+
 
     useEffect(() => {
         if (!isPlaying || frames.length === 0) return;
