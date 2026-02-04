@@ -25,7 +25,7 @@ export default function CameraComponent() {
     const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedCamera, setSelectedCamera] = useState<string | undefined>();
     const streamRef = useRef<MediaStream | null>(null);
-    const ffmpegRef = useRef(new FFmpeg());
+    const ffmpegRef = useRef<FFmpeg | null>(null);
 const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
 
 
@@ -124,8 +124,14 @@ const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
         return () => clearInterval(id);
     }, [isPlaying, frames, fps]);
 
+
+// Dans loadFFmpeg :
 async function loadFFmpeg() {
     if (ffmpegLoaded) return;
+    
+    if (!ffmpegRef.current) {
+        ffmpegRef.current = new FFmpeg();
+    }
     
     const ffmpeg = ffmpegRef.current;
     const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
@@ -155,7 +161,7 @@ async function exportVideo() {
             const response = await fetch(frames[i]);
             const blob = await response.blob();
             const fileName = `frame${i.toString().padStart(4, '0')}.png`;
-            await ffmpeg.writeFile(fileName, await fetchFile(blob));
+            await ffmpeg?.writeFile(fileName, await fetchFile(blob));
         }
         
         // Créer la vidéo MP4 avec FFmpeg
@@ -163,7 +169,7 @@ async function exportVideo() {
         // -i : pattern des images
         // -c:v libx264 : codec H.264
         // -pix_fmt yuv420p : format pixel compatible
-        await ffmpeg.exec([
+        await ffmpeg?.exec([
             '-framerate', fps.toString(),
             '-i', 'frame%04d.png',
             '-c:v', 'libx264',
@@ -172,7 +178,7 @@ async function exportVideo() {
         ]);
         
         // Lire le fichier créé
-        const data = await ffmpeg.readFile('output.mp4');
+        const data = await ffmpeg?.readFile('output.mp4');
         
         // Créer le blob et télécharger
         const blob = new Blob([new Uint8Array(data as Uint8Array)], { type: 'video/mp4' });
@@ -186,9 +192,9 @@ async function exportVideo() {
         // Nettoyer les fichiers temporaires
         for (let i = 0; i < frames.length; i++) {
             const fileName = `frame${i.toString().padStart(4, '0')}.png`;
-            await ffmpeg.deleteFile(fileName);
+            await ffmpeg?.deleteFile(fileName);
         }
-        await ffmpeg.deleteFile('output.mp4');
+        await ffmpeg?.deleteFile('output.mp4');
         
     } catch (error) {
         console.error('Erreur lors de l\'export:', error);

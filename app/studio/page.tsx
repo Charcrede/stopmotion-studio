@@ -1,3 +1,4 @@
+"use client";
 import Camera from "../components/Camera";
 
 export default function StopMotion() {
