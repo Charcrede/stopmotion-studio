@@ -26,6 +26,7 @@ export default function CameraComponent() {
             const videoDevices = devices.filter(d => d.kind === "videoinput");
             setCameraDevices(videoDevices);
             if (videoDevices.length) setSelectedCamera(videoDevices[0].deviceId);
+            console.log("Video devices:", videoDevices);
         });
     }, []);
 
