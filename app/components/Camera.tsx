@@ -18,33 +18,63 @@ export default function CameraComponent() {
     const [fps, setFps] = useState(12);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [isExporting, setIsExporting] = useState(false);
+    const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([]);
+    const [selectedCamera, setSelectedCamera] = useState<string | undefined>();
 
+    useEffect(() => {
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+            const videoDevices = devices.filter(d => d.kind === "videoinput");
+            setCameraDevices(videoDevices);
+            if (videoDevices.length) setSelectedCamera(videoDevices[0].deviceId);
+        });
+    }, []);
 
 
 
     const [frames, setFrames] = useState<string[]>([]);
     let stream: MediaStream;
-     async function startCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: false,
-                });
 
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            } catch (err) {
-                console.error("Erreur accès caméra :", err);
-            }
+    async function startCamera(deviceId?: string) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+                deviceId: deviceId ? { exact: deviceId } : undefined,
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+            },
+          audio: false,
+        });
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
         }
+      } catch (err) {
+        console.error("Erreur accès caméra :", err);
+      }
+    }
+
+    // const startCamera = async (deviceId?: string) => {
+
+    //     const stream = await navigator.mediaDevices.getUserMedia({
+    //         video: {
+    //             deviceId: deviceId ? { exact: deviceId } : undefined,
+    //             width: { ideal: 1280 },
+    //             height: { ideal: 720 },
+    //         },
+    //         audio: false
+    //     });
+
+    //     videoRef.current.srcObject = stream;
+    //     streamRef.current = stream;
+    //     await videoRef.current.play();
+    // };
 
     useEffect(() => {
-        
 
-       
 
-        startCamera();
+
+
+        startCamera(selectedCamera);
 
         return () => {
             if (stream) {
@@ -198,6 +228,14 @@ export default function CameraComponent() {
 
                 {/* ACTIONS */}
                 <div className="flex flex-wrap justify-center gap-3">
+                    <select onChange={e => startCamera(e.target.value)}>
+                        {cameraDevices.map(dev => (
+                            <option key={dev.deviceId} value={dev.deviceId}>
+                                {dev.label || `Camera ${dev.deviceId}`}
+                            </option>
+                        ))}
+                    </select>
+
                     <button
                         onClick={captureFrame}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-xl 
@@ -221,7 +259,7 @@ export default function CameraComponent() {
                             </button>
 
                             <button
-                                onClick={() => {    setIsPlaying(false); startCamera();}}  
+                                onClick={() => { setIsPlaying(false); startCamera(); }}
                                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl
                    bg-white/10 text-white
                    hover:bg-white/20 transition"
