@@ -238,13 +238,30 @@ export default function CameraComponent() {
 
                 {/* ACTIONS */}
                 <div className="flex flex-wrap justify-center gap-3">
-                    <select onChange={e => startCamera(e.target.value)}>
-                        {cameraDevices.map(dev => (
-                            <option key={dev.deviceId} value={dev.deviceId}>
-                                {dev.label || `Camera ${dev.deviceId}`}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="relative w-60">
+                        <select
+                            value={selectedCamera}
+                            onChange={e => {
+                                setSelectedCamera(e.target.value);
+                                startCamera(e.target.value);
+                            }}
+                            className="appearance-none w-full bg-[#1f1f1f] text-white px-4 py-2 rounded-xl border border-white/20 shadow-md hover:border-[#4F46E5] focus:outline-none focus:ring-2 focus:ring-[#4F46E5] transition"
+                        >
+                            {cameraDevices.map(dev => (
+                                <option key={dev.deviceId} value={dev.deviceId}>
+                                    {dev.label || `Camera ${dev.deviceId}`}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* flèche custom */}
+                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+
 
                     <button
                         onClick={captureFrame}
