@@ -31,35 +31,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PREVIEW */}
-      <section className="px-6 py-16 max-w-6xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl font-blanka text-center mb-10">
-          Le principe
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            "Capture",
-            "Ajustement",
-            "Animation",
-            "Export",
-          ].map((title, i) => (
-            <div
-              key={i}
-              className="relative rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black"
-            >
-              <img src="/bg.png" alt="preview" />
-              <div className="absolute inset-0 p-4 flex flex-col justify-center text-center bg-black/40">
-                <h3 className="font-blanka text-xl mb-2">{title}</h3>
-                <p className="font-edusa text-sm text-gray-200">
-                  Une étape simple et directe,
-                  pensée pour rester concentré sur le mouvement.
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* STORY */}
       <section className="px-6 py-20 max-w-3xl mx-auto text-center">
